@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Dust Monitoring Node Dashboard</title>
+    <title>IoT Dust Monitoring Fleet</title>
+    
+    <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         body {
@@ -16,31 +18,20 @@
             overflow-x: hidden;
         }
         
-        /* Grafana-style dark theme cards */
+        /* Grafana-style Cards */
         .dashboard-card {
             background-color: #16181f;
             border: 1px solid rgba(255, 255, 255, 0.05);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
-        
-        .dashboard-card:hover {
-            border-color: rgba(255, 255, 255, 0.1);
-        }
 
-        /* Neon Glows */
+        /* Neon Text Glows */
         .neon-text-green { color: #00ff87; text-shadow: 0 0 10px rgba(0, 255, 135, 0.3); }
         .neon-text-yellow { color: #ffeb3b; text-shadow: 0 0 10px rgba(255, 235, 59, 0.3); }
+        .neon-text-orange { color: #ff9800; text-shadow: 0 0 10px rgba(255, 152, 0, 0.3); }
         .neon-text-red { color: #ff003c; text-shadow: 0 0 10px rgba(255, 0, 60, 0.3); }
-        .neon-text-cyan { color: #00f2fe; }
-
-        .indicator-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 8px currentColor;
-        }
+        .neon-text-cyan { color: #00f2fe; text-shadow: 0 0 10px rgba(0, 242, 254, 0.3); }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
@@ -48,180 +39,187 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        /* Custom Select Styling */
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
-        }
+        /* Transitions */
+        .fade-enter { opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+        .fade-enter-active { opacity: 1; transform: translateY(0); }
+        .fade-exit { opacity: 1; transform: translateY(0); transition: opacity 0.4s ease-in, transform 0.4s ease-in; }
+        .fade-exit-active { opacity: 0; transform: translateY(-10px); }
 
-        /* Transition Utility Classes */
-        .fade-transition { transition: opacity 0.6s ease-in-out, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        /* Table specific styles */
+        .table-row-hover:hover {
+            background-color: #1e212b;
+            cursor: pointer;
+        }
+        
+        /* Status Badges */
+        .badge-red { background-color: rgba(255, 0, 60, 0.1); border: 1px solid rgba(255, 0, 60, 0.4); color: #ff003c; }
+        .badge-orange { background-color: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.4); color: #ff9800; }
+        .badge-green { background-color: rgba(0, 255, 135, 0.1); border: 1px solid rgba(0, 255, 135, 0.4); color: #00ff87; }
+
+        .row-red { border-left: 4px solid #ff003c; }
+        .row-orange { border-left: 4px solid #ff9800; }
+        .row-green { border-left: 4px solid #00ff87; }
     </style>
 </head>
 <body class="min-h-screen text-slate-200">
 
-    <!-- LANDING PAGE -->
-    <div id="landing-page" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0b0c10] fade-transition opacity-100 transform translate-y-0">
+    <!-- SCREEN 1: FLEET OVERVIEW TABLE -->
+    <div id="screen-1" class="fade-enter fade-enter-active max-w-6xl mx-auto p-4 md:p-8">
+        <header class="mb-8 flex justify-between items-end border-b border-gray-800 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white tracking-wide">Fleet Overview</h1>
+                <p class="text-sm text-gray-400 mt-1">Real-Time Environmental Dust Monitoring Nodes</p>
+            </div>
+            <div class="flex items-center space-x-2 text-sm bg-gray-900 px-3 py-1.5 rounded-md border border-gray-800">
+                <span class="w-2 h-2 rounded-full bg-[#00ff87] animate-pulse"></span>
+                <span class="text-gray-400">Live Sync</span>
+            </div>
+        </header>
+
+        <div class="dashboard-card rounded-xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-800/50 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-700">
+                            <th class="px-6 py-4 font-medium">Node ID</th>
+                            <th class="px-6 py-4 font-medium">Location</th>
+                            <th class="px-6 py-4 font-medium">PM 10 (µg/m³)</th>
+                            <th class="px-6 py-4 font-medium">Temp (°C)</th>
+                            <th class="px-6 py-4 font-medium">RH (%)</th>
+                            <th class="px-6 py-4 font-medium">System Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fleet-table-body" class="divide-y divide-gray-800/50 text-sm">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
         
-        <!-- Abstract background glows -->
-        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00f2fe] rounded-full mix-blend-screen filter blur-[150px] opacity-10"></div>
-        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00ff87] rounded-full mix-blend-screen filter blur-[150px] opacity-10"></div>
-
-        <div class="relative dashboard-card p-8 md:p-12 rounded-2xl w-full max-w-md mx-4 text-center z-10 border-t-2 border-t-[#00f2fe]/30">
-            <div class="w-16 h-16 mx-auto bg-slate-800 rounded-full flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(0,242,254,0.2)]">
-                <svg class="w-8 h-8 text-[#00f2fe]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
-                </svg>
-            </div>
-            <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">System Access</h1>
-            <p class="text-slate-400 mb-8 text-sm">Select an active environmental node to view real-time telemetry.</p>
-            
-            <div class="mb-6 text-left">
-                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Target Node</label>
-                <select id="node-selector" class="w-full bg-[#0b0c10] border border-slate-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-[#00f2fe] focus:ring-1 focus:ring-[#00f2fe] transition-colors cursor-pointer">
-                    <option value="NODE_RJ_01">NODE_RJ_01 (Sector A)</option>
-                    <option value="NODE_RJ_02">NODE_RJ_02 (Sector B)</option>
-                    <option value="NODE_RJ_03">NODE_RJ_03 (Crusher Plant)</option>
-                    <option value="NODE_RJ_04" selected>NODE_RJ_04 (Perimeter East)</option>
-                </select>
-            </div>
-
-            <button id="connect-btn" class="w-full bg-gradient-to-r from-[#00f2fe] to-[#4facfe] text-slate-900 font-bold py-3 px-4 rounded-lg hover:shadow-[0_0_20px_rgba(0,242,254,0.4)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center">
-                <span>Connect to Node</span>
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-            </button>
+        <div class="mt-6 flex space-x-6 text-xs text-gray-500 justify-center">
+            <div class="flex items-center"><span class="w-3 h-3 rounded-sm bg-red-500/20 border border-red-500/50 mr-2"></span> True Dust Spike</div>
+            <div class="flex items-center"><span class="w-3 h-3 rounded-sm bg-orange-500/20 border border-orange-500/50 mr-2"></span> Mist Interference</div>
+            <div class="flex items-center"><span class="w-3 h-3 rounded-sm bg-green-500/20 border border-green-500/50 mr-2"></span> Normal / Healthy</div>
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD (Initially Hidden) -->
-    <div id="dashboard" class="hidden min-h-screen p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 fade-transition opacity-0 transform translate-y-10">
+    <!-- SCREEN 2: NODE DETAILED DASHBOARD (Initially Hidden) -->
+    <div id="screen-2" class="hidden fade-enter max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         
-        <!-- Header Section -->
+        <!-- Header & Back Button -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-4">
-            <div>
-                <h1 class="text-2xl font-bold text-white tracking-wide">Environmental Telemetry</h1>
-                <p class="text-sm text-gray-400 mt-1">Real-time Particulate Matter Monitoring</p>
+            <div class="flex items-center">
+                <button onclick="goBackToFleet()" class="mr-4 text-gray-400 hover:text-white transition-colors bg-gray-800 hover:bg-gray-700 p-2 rounded-lg flex items-center">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Back
+                </button>
+                <div>
+                    <h1 class="text-2xl font-bold text-white tracking-wide flex items-center">
+                        Node Telemetry: <span id="dash-node-id" class="ml-2 neon-text-cyan">--</span>
+                    </h1>
+                    <p id="dash-node-name" class="text-sm text-gray-400 mt-1">--</p>
+                </div>
             </div>
             <div class="mt-4 md:mt-0 flex items-center space-x-4">
-                <button id="disconnect-btn" class="text-sm text-slate-400 hover:text-white transition-colors underline decoration-slate-600 underline-offset-4">Change Node</button>
                 <div class="flex items-center text-sm bg-[#16181f] px-4 py-2 rounded-lg border border-gray-800">
-                    <div class="indicator-dot text-[#00ff87] bg-[#00ff87] mr-2 animate-pulse"></div>
-                    <span class="text-gray-300">Live Connection</span>
+                    <div class="w-2 h-2 rounded-full bg-[#00ff87] mr-2 animate-pulse"></div>
+                    <span class="text-gray-300 font-mono">FW: 0.1.0</span>
                 </div>
             </div>
         </header>
 
-        <!-- Top Row: Status & Environment -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Node Identity -->
-            <div class="dashboard-card rounded-xl p-5 flex flex-col justify-center">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Node Identity</h3>
-                <div id="dash-node-id" class="text-xl font-bold text-white">--</div>
-                <div class="text-sm text-gray-400 mt-1 font-mono">FW: 0.1.0</div>
-            </div>
-
+        <!-- Top Row: Environmental & Battery Status -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <!-- Enclosure Temp -->
-            <div class="dashboard-card rounded-xl p-5 flex flex-col justify-center">
+            <div class="dashboard-card rounded-xl p-5 flex flex-col justify-center border-t-2 border-t-blue-500/30">
                 <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Enclosure Temp</h3>
                 <div class="flex items-end">
-                    <span id="dash-temp" class="text-3xl font-bold text-white">42.5</span>
+                    <span id="dash-temp" class="text-3xl font-bold text-white">--</span>
                     <span class="text-lg text-gray-400 ml-1 mb-1">°C</span>
                 </div>
                 <div class="w-full bg-gray-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                    <div class="bg-gradient-to-r from-orange-400 to-red-500 h-full w-[75%]"></div>
+                    <div id="dash-temp-bar" class="bg-gradient-to-r from-blue-400 to-red-500 h-full w-[50%]"></div>
                 </div>
             </div>
 
             <!-- Battery Health -->
-            <div class="dashboard-card rounded-xl p-5 flex flex-col justify-center relative overflow-hidden">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Battery Health</h3>
+            <div class="dashboard-card rounded-xl p-5 flex flex-col justify-center border-t-2 border-t-green-500/30">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Battery Health (LiFePO4)</h3>
                 <div class="flex items-center justify-between">
                     <div class="flex items-end">
-                        <span id="dash-bat" class="text-3xl font-bold neon-text-green transition-colors duration-300">3.28</span>
+                        <span id="dash-bat" class="text-3xl font-bold transition-colors duration-300 text-[#00ff87]">--</span>
                         <span class="text-lg text-gray-400 ml-1 mb-1">V</span>
                     </div>
-                    <!-- Battery Icon -->
                     <div class="w-8 h-4 border-2 border-gray-500 rounded-sm p-0.5 relative">
                         <div class="absolute -right-1.5 top-1 w-1 h-1.5 bg-gray-500 rounded-r-sm"></div>
-                        <div id="bat-indicator" class="bg-[#00ff87] w-full h-full rounded-sm shadow-[0_0_8px_#00ff87] transition-colors duration-300"></div>
+                        <div id="bat-indicator" class="bg-[#00ff87] w-full h-full rounded-sm transition-all duration-300"></div>
                     </div>
                 </div>
-                <div id="bat-status" class="text-xs text-[#00ff87] mt-2 font-medium transition-colors duration-300">Healthy (LiFePO4)</div>
+                <div id="bat-status" class="text-xs text-[#00ff87] mt-2 font-medium">Healthy</div>
             </div>
-
-            <!-- System Status -->
-            <div class="dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center">
-                <div class="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-2">
-                    <svg class="w-6 h-6 text-[#00ff87]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
+            
+            <!-- Quick Active Status -->
+            <div id="dash-quick-status-card" class="dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center">
+                <div id="dash-quick-icon" class="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-2">
+                    <svg class="w-6 h-6 text-[#00ff87]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 </div>
-                <div class="text-lg font-bold neon-text-green tracking-wide uppercase">System OK</div>
+                <div id="dash-quick-text" class="text-lg font-bold neon-text-green tracking-wide uppercase">System OK</div>
             </div>
         </div>
 
-        <!-- Middle Section: Dust Concentration Metric Cards -->
+        <!-- Middle Section: Dust Concentration & Chart -->
         <h2 class="text-lg font-semibold text-white mt-8 mb-4 flex items-center">
             <svg class="w-5 h-5 mr-2 text-[#00f2fe]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            Optical Proxy Particulate Mass
+            Optical Proxy Particulate Mass (Sensirion SPS30)
         </h2>
         
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- PM1.0 Card -->
-            <div id="card-pm1" class="dashboard-card rounded-xl p-5 border-l-4 border-l-[#00ff87] transition-colors duration-300">
-                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-1">PM 1.0 Mass</h3>
-                <div class="flex items-baseline space-x-1">
-                    <span id="val-pm1" class="text-3xl font-bold text-white transition-colors duration-300">--</span>
-                    <span class="text-xs text-gray-500">µg/m³</span>
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            
+            <!-- The 4 Gauges -->
+            <div class="grid grid-cols-2 gap-4 xl:col-span-1">
+                <!-- PM1.0 Card -->
+                <div id="card-pm1" class="dashboard-card rounded-xl p-4 border-l-4 transition-colors duration-300">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-1">PM 1.0</h3>
+                    <div class="flex items-baseline space-x-1">
+                        <span id="val-pm1" class="text-2xl font-bold text-white">--</span>
+                        <span class="text-xs text-gray-500">µg/m³</span>
+                    </div>
                 </div>
-                <div id="tag-pm1" class="text-xs text-[#00ff87] mt-2 bg-green-500/10 inline-block px-2 py-1 rounded transition-colors duration-300 border border-green-500/20">NORMAL</div>
+                <!-- PM2.5 Card -->
+                <div id="card-pm25" class="dashboard-card rounded-xl p-4 border-l-4 transition-colors duration-300">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-1">PM 2.5</h3>
+                    <div class="flex items-baseline space-x-1">
+                        <span id="val-pm25" class="text-2xl font-bold text-white">--</span>
+                        <span class="text-xs text-gray-500">µg/m³</span>
+                    </div>
+                </div>
+                <!-- PM4.0 Card -->
+                <div id="card-pm40" class="dashboard-card rounded-xl p-4 border-l-4 transition-colors duration-300">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-1">PM 4.0</h3>
+                    <div class="flex items-baseline space-x-1">
+                        <span id="val-pm40" class="text-2xl font-bold text-white">--</span>
+                        <span class="text-xs text-gray-500">µg/m³</span>
+                    </div>
+                </div>
+                <!-- PM10 Card -->
+                <div id="card-pm10" class="dashboard-card rounded-xl p-4 border-l-4 transition-colors duration-300 relative">
+                    <div class="absolute top-2 right-2 flex space-x-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    </div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-1">PM 10 (Primary)</h3>
+                    <div class="flex items-baseline space-x-1">
+                        <span id="val-pm10" class="text-3xl font-bold text-white">--</span>
+                        <span class="text-xs text-gray-500">µg/m³</span>
+                    </div>
+                    <div id="tag-pm10" class="text-[10px] uppercase font-bold mt-2 inline-block px-1.5 py-0.5 rounded transition-colors duration-300">--</div>
+                </div>
             </div>
 
-            <!-- PM2.5 Card -->
-            <div id="card-pm25" class="dashboard-card rounded-xl p-5 border-l-4 border-l-[#00ff87] transition-colors duration-300">
-                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-1">PM 2.5 Mass</h3>
-                <div class="flex items-baseline space-x-1">
-                    <span id="val-pm25" class="text-3xl font-bold text-white transition-colors duration-300">--</span>
-                    <span class="text-xs text-gray-500">µg/m³</span>
+            <!-- Time-series Chart -->
+            <div class="dashboard-card rounded-xl p-5 xl:col-span-2">
+                <div class="w-full h-64 relative">
+                    <canvas id="pmChart"></canvas>
                 </div>
-                <div id="tag-pm25" class="text-xs text-[#00ff87] mt-2 bg-green-500/10 inline-block px-2 py-1 rounded transition-colors duration-300 border border-green-500/20">NORMAL</div>
-            </div>
-
-            <!-- PM4.0 Card -->
-            <div id="card-pm40" class="dashboard-card rounded-xl p-5 border-l-4 border-l-[#00ff87] transition-colors duration-300">
-                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-1">PM 4.0 Mass</h3>
-                <div class="flex items-baseline space-x-1">
-                    <span id="val-pm40" class="text-3xl font-bold text-white transition-colors duration-300">--</span>
-                    <span class="text-xs text-gray-500">µg/m³</span>
-                </div>
-                <div id="tag-pm40" class="text-xs text-[#00ff87] mt-2 bg-green-500/10 inline-block px-2 py-1 rounded transition-colors duration-300 border border-green-500/20">NORMAL</div>
-            </div>
-
-            <!-- PM10 Card -->
-            <div id="card-pm10" class="dashboard-card rounded-xl p-5 border-l-4 border-l-[#00ff87] transition-colors duration-300">
-                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-1">PM 10 Mass</h3>
-                <div class="flex items-baseline space-x-1">
-                    <span id="val-pm10" class="text-3xl font-bold text-white transition-colors duration-300">--</span>
-                    <span class="text-xs text-gray-500">µg/m³</span>
-                </div>
-                <div id="tag-pm10" class="text-xs text-[#00ff87] mt-2 bg-green-500/10 inline-block px-2 py-1 rounded transition-colors duration-300 border border-green-500/20">NORMAL</div>
-            </div>
-        </div>
-
-        <!-- Main PM Chart -->
-        <div class="dashboard-card rounded-xl p-5 mt-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-semibold text-white uppercase tracking-wider">PM Concentration (Live Simulation)</h3>
-                <div class="text-xs text-gray-400 bg-gray-800 px-3 py-1 rounded-md border border-gray-700 flex items-center">
-                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse mr-2"></span>
-                    Live Data
-                </div>
-            </div>
-            <div class="w-full h-80 relative">
-                <canvas id="pmChart"></canvas>
             </div>
         </div>
 
@@ -232,31 +230,29 @@
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pb-12">
-            <!-- Humidity Value Card -->
-            <div class="dashboard-card rounded-xl p-5 flex flex-col justify-center col-span-1">
+            <!-- Humidity Value -->
+            <div class="dashboard-card rounded-xl p-5 flex flex-col justify-center">
                 <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Relative Humidity (RH)</h3>
                 <div class="flex items-end mb-2">
                     <span id="dash-rh" class="text-4xl font-bold text-[#2979ff] transition-all">--</span>
                     <span class="text-xl text-gray-400 ml-1 mb-1">%</span>
                 </div>
                 <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                    <div id="rh-bar" class="bg-[#2979ff] h-full transition-all duration-500" style="width: 0%"></div>
+                    <div id="rh-bar" class="bg-[#2979ff] h-full transition-all duration-500"></div>
                 </div>
             </div>
 
-            <!-- Interference Flag Card -->
-            <div id="rh-flag-card" class="dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center col-span-1 transition-colors duration-300">
+            <!-- Interference Flag -->
+            <div id="rh-flag-card" class="dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center transition-colors duration-300">
                 <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Data Validity Flag</h3>
                 <div id="rh-flag-badge" class="px-4 py-2 rounded-lg border transition-colors duration-300">
                     <span id="rh-flag-text" class="text-xl font-bold tracking-widest transition-colors duration-300">--</span>
                 </div>
-                <p id="rh-flag-desc" class="text-xs mt-3 max-w-[200px] transition-colors duration-300">
-                    Waiting for data...
-                </p>
+                <p id="rh-flag-desc" class="text-xs mt-3 max-w-[200px] transition-colors duration-300">--</p>
             </div>
 
-            <!-- Small Humidity Chart -->
-            <div class="dashboard-card rounded-xl p-5 col-span-1">
+            <!-- RH Chart -->
+            <div class="dashboard-card rounded-xl p-5">
                 <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">RH Trend</h3>
                 <div class="w-full h-24 mt-2">
                     <canvas id="rhChart"></canvas>
@@ -266,275 +262,368 @@
     </div>
 
     <script>
-        // DOM Elements
-        const landingPage = document.getElementById('landing-page');
-        const dashboard = document.getElementById('dashboard');
-        const connectBtn = document.getElementById('connect-btn');
-        const disconnectBtn = document.getElementById('disconnect-btn');
-        const nodeSelector = document.getElementById('node-selector');
-        
-        // Chart Instances and Data Variables
-        let pmChartInstance = null;
-        let rhChartInstance = null;
-        let simulationInterval = null;
-        
-        let timeLabels = [];
-        let pm1Data = [];
-        let pm25Data = [];
-        let pm40Data = [];
-        let pm10Data = [];
-        let rhData = [];
+        // --- DATA MODEL & INITIALIZATION ---
+        // Initial setup satisfies constraints: 1 Red, 1 Orange, 3 Green.
+        const nodesData = {
+            'NODE_RJ_01': { id: 'NODE_RJ_01', name: 'Sector A', temp: 42.5, bat: 3.28, pm10: 1050, rh: 45, history: { labels:[], pm1:[], pm25:[], pm40:[], pm10:[], rh:[] } }, // RED
+            'NODE_RJ_02': { id: 'NODE_RJ_02', name: 'Sector B', temp: 39.1, bat: 3.15, pm10: 980, rh: 88, history: { labels:[], pm1:[], pm25:[], pm40:[], pm10:[], rh:[] } }, // ORANGE
+            'NODE_RJ_03': { id: 'NODE_RJ_03', name: 'Crusher Plant', temp: 45.0, bat: 3.30, pm10: 450, rh: 65, history: { labels:[], pm1:[], pm25:[], pm40:[], pm10:[], rh:[] } }, // GREEN
+            'NODE_RJ_04': { id: 'NODE_RJ_04', name: 'Perimeter East', temp: 38.5, bat: 2.90, pm10: 120, rh: 96, history: { labels:[], pm1:[], pm25:[], pm40:[], pm10:[], rh:[] } }, // GREEN (High RH but low PM)
+            'NODE_RJ_05': { id: 'NODE_RJ_05', name: 'Haul Road', temp: 41.2, bat: 3.20, pm10: 600, rh: 55, history: { labels:[], pm1:[], pm25:[], pm40:[], pm10:[], rh:[] } }  // GREEN
+        };
 
-        // --- Transition Logic ---
-        connectBtn.addEventListener('click', () => {
-            const selectedNode = nodeSelector.value;
-            document.getElementById('dash-node-id').textContent = selectedNode;
+        const nodeIds = Object.keys(nodesData);
+        const MAX_HISTORY = 25;
+        let activeNodeId = null;
+        let pmChartInst = null;
+        let rhChartInst = null;
 
-            // Fade out landing
-            landingPage.classList.remove('opacity-100', 'translate-y-0');
-            landingPage.classList.add('opacity-0', '-translate-y-10');
-
-            setTimeout(() => {
-                landingPage.classList.add('hidden');
-                dashboard.classList.remove('hidden');
+        // Seed initial history
+        const now = new Date();
+        for (let i = MAX_HISTORY; i >= 0; i--) {
+            const d = new Date(now.getTime() - i * 3000); // 3 sec intervals
+            const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+            
+            nodeIds.forEach(id => {
+                let node = nodesData[id];
+                // Reverse calculate smaller PMs from PM10 for initial seed
+                let p10 = node.pm10 + (Math.random() * 20 - 10);
+                let p40 = p10 * 0.7;
+                let p25 = p40 * 0.4;
+                let p1 = p25 * 0.4;
                 
-                // Allow browser to render display:block before fading in
-                requestAnimationFrame(() => {
-                    dashboard.classList.remove('opacity-0', 'translate-y-10');
-                    dashboard.classList.add('opacity-100', 'translate-y-0');
-                    
-                    // Initialize Dashboard Data & Charts
-                    initDashboard();
-                });
-            }, 600);
-        });
+                node.history.labels.push(timeStr);
+                node.history.pm10.push(p10);
+                node.history.pm40.push(p40);
+                node.history.pm25.push(p25);
+                node.history.pm1.push(p1);
+                node.history.rh.push(node.rh + (Math.random() * 2 - 1));
+            });
+        }
 
-        disconnectBtn.addEventListener('click', () => {
-            // Stop simulation
-            if(simulationInterval) clearInterval(simulationInterval);
+        // --- STREAMING_CHUNK: Core Logic & Fleet Table Rendering... ---
+        
+        // Evaluates business logic for color coding
+        function evaluateNodeStatus(pm10, rh) {
+            if (pm10 >= 950 && rh < 80) return { type: 'red', text: 'TRUE DUST SPIKE', class: 'badge-red', rowClass: 'row-red' };
+            if (pm10 >= 950 && rh >= 80) return { type: 'orange', text: 'MIST INTERFERENCE', class: 'badge-orange', rowClass: 'row-orange' };
+            return { type: 'green', text: 'NORMAL', class: 'badge-green', rowClass: 'row-green' };
+        }
 
-            // Fade out dash
-            dashboard.classList.remove('opacity-100', 'translate-y-0');
-            dashboard.classList.add('opacity-0', 'translate-y-10');
+        function renderTable() {
+            const tbody = document.getElementById('fleet-table-body');
+            tbody.innerHTML = '';
 
+            nodeIds.forEach(id => {
+                const node = nodesData[id];
+                const status = evaluateNodeStatus(node.pm10, node.rh);
+
+                const tr = document.createElement('tr');
+                tr.className = `table-row-hover transition-colors ${status.rowClass}`;
+                tr.onclick = () => openDashboard(id);
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-bold text-white">${node.id}</td>
+                    <td class="px-6 py-4 text-gray-300">${node.name}</td>
+                    <td class="px-6 py-4 font-mono font-medium ${node.pm10 >= 950 ? (status.type==='red'?'text-red-400':'text-orange-400') : 'text-gray-300'}">${node.pm10.toFixed(1)}</td>
+                    <td class="px-6 py-4 text-gray-300">${node.temp.toFixed(1)}</td>
+                    <td class="px-6 py-4 font-medium ${node.rh >= 80 ? 'text-blue-400' : 'text-gray-300'}">${node.rh.toFixed(1)}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded text-xs font-bold tracking-wide ${status.class}">
+                            ${status.text}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- STREAMING_CHUNK: Transition and Navigation Logic... ---
+        
+        const screen1 = document.getElementById('screen-1');
+        const screen2 = document.getElementById('screen-2');
+
+        function openDashboard(id) {
+            activeNodeId = id;
+            
+            // Transition Out Screen 1
+            screen1.classList.remove('fade-enter-active');
+            screen1.classList.add('fade-exit-active');
+            
             setTimeout(() => {
-                dashboard.classList.add('hidden');
-                landingPage.classList.remove('hidden');
+                screen1.classList.add('hidden');
+                screen1.classList.remove('fade-exit-active');
                 
-                if(pmChartInstance) pmChartInstance.destroy();
-                if(rhChartInstance) rhChartInstance.destroy();
+                // Init Dashboard Data
+                updateDashboardHeader(id);
+                initCharts(id);
+                updateDashboardValues(id);
 
-                requestAnimationFrame(() => {
-                    landingPage.classList.remove('opacity-0', '-translate-y-10');
-                    landingPage.classList.add('opacity-100', 'translate-y-0');
-                });
-            }, 600);
-        });
+                // Transition In Screen 2
+                screen2.classList.remove('hidden');
+                // Force reflow
+                void screen2.offsetWidth; 
+                screen2.classList.add('fade-enter-active');
+            }, 400);
+        }
 
-        // --- Chart Configuration & Initialization ---
+        function goBackToFleet() {
+            activeNodeId = null;
+            
+            // Transition Out Screen 2
+            screen2.classList.remove('fade-enter-active');
+            screen2.classList.add('fade-exit-active');
+            
+            setTimeout(() => {
+                screen2.classList.add('hidden');
+                screen2.classList.remove('fade-exit-active');
+                
+                // Destroy charts to prevent memory leaks/glitches
+                if(pmChartInst) pmChartInst.destroy();
+                if(rhChartInst) rhChartInst.destroy();
+                
+                // Render latest table data
+                renderTable();
+
+                // Transition In Screen 1
+                screen1.classList.remove('hidden');
+                void screen1.offsetWidth;
+                screen1.classList.add('fade-enter-active');
+            }, 400);
+        }
+
+        // --- STREAMING_CHUNK: Dashboard Initialization and Chart.js Setup... ---
+        
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.05)';
-        Chart.defaults.scale.grid.borderColor = 'rgba(255, 255, 255, 0.1)';
 
-        function initDashboard() {
-            // Seed initial data (last 20 data points)
-            timeLabels = [];
-            pm1Data = []; pm25Data = []; pm40Data = []; pm10Data = []; rhData = [];
-            
-            let now = new Date();
-            for (let i = 20; i >= 0; i--) {
-                const d = new Date(now.getTime() - i * 60000);
-                timeLabels.push(`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`);
-                
-                // Baseline values
-                pm1Data.push(30 + Math.random() * 10);
-                pm25Data.push(80 + Math.random() * 20);
-                pm40Data.push(200 + Math.random() * 50);
-                pm10Data.push(350 + Math.random() * 50);
-                rhData.push(70 + Math.random() * 5);
-            }
+        function initCharts(id) {
+            const node = nodesData[id];
 
-            // Init PM Chart
+            // PM Chart
             const ctxPm = document.getElementById('pmChart').getContext('2d');
-            pmChartInstance = new Chart(ctxPm, {
+            pmChartInst = new Chart(ctxPm, {
                 type: 'line',
                 data: {
-                    labels: timeLabels,
+                    labels: node.history.labels,
                     datasets: [
-                        { label: 'PM 1.0', data: pm1Data, borderColor: '#00f2fe', backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, pointRadius: 0 },
-                        { label: 'PM 2.5', data: pm25Data, borderColor: '#00ff87', backgroundColor: 'transparent', borderWidth: 2, borderDash: [5, 5], tension: 0.4, pointRadius: 0 },
-                        { label: 'PM 4.0', data: pm40Data, borderColor: '#ffeb3b', backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, pointRadius: 0 },
-                        { label: 'PM 10', data: pm10Data, borderColor: '#ff003c', backgroundColor: 'rgba(255, 0, 60, 0.05)', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true }
+                        { label: 'PM 1.0', data: node.history.pm1, borderColor: '#00f2fe', borderWidth: 1, tension: 0.4, pointRadius: 0 },
+                        { label: 'PM 2.5', data: node.history.pm25, borderColor: '#00ff87', borderWidth: 2, borderDash: [4, 4], tension: 0.4, pointRadius: 0 },
+                        { label: 'PM 4.0', data: node.history.pm40, borderColor: '#ffeb3b', borderWidth: 2, tension: 0.4, pointRadius: 0 },
+                        { label: 'PM 10', data: node.history.pm10, borderColor: '#ff003c', backgroundColor: 'rgba(255, 0, 60, 0.1)', borderWidth: 3, tension: 0.4, pointRadius: 0, fill: true }
                     ]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    animation: { duration: 400 },
-                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } } },
+                    responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
+                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } },
                     scales: {
                         x: { grid: { display: false } },
-                        y: { beginAtZero: true, suggestedMax: 1100, title: { display: true, text: 'µg/m³' } }
+                        y: { beginAtZero: true, suggestedMax: 1200, title: { display: true, text: 'Mass (µg/m³)' } }
                     }
                 }
             });
 
-            // Init RH Chart
+            // RH Chart
             const ctxRh = document.getElementById('rhChart').getContext('2d');
-            rhChartInstance = new Chart(ctxRh, {
+            rhChartInst = new Chart(ctxRh, {
                 type: 'line',
-                data: { labels: timeLabels, datasets: [{ data: rhData, borderColor: '#2979ff', backgroundColor: 'rgba(41, 121, 255, 0.2)', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true }] },
+                data: { 
+                    labels: node.history.labels, 
+                    datasets: [{ data: node.history.rh, borderColor: '#2979ff', backgroundColor: 'rgba(41, 121, 255, 0.2)', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true }] 
+                },
                 options: {
-                    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
-                    plugins: { legend: { display: false }, tooltip: { displayColors: false } },
-                    scales: { x: { display: false }, y: { display: false, min: 50, max: 100 } },
+                    responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { min: 30, max: 100 } },
                     layout: { padding: 0 }
                 }
             });
-
-            // Trigger initial UI update based on last seeded value
-            updateDashboardUI(pm1Data[20], pm25Data[20], pm40Data[20], pm10Data[20], rhData[20]);
-
-            // Start Real-Time Simulation (Updates every 3 seconds for demo purposes)
-            simulationInterval = setInterval(simulateRealTimeData, 3000);
         }
 
-        // --- STREAMING_CHUNK:Real-Time Simulation and Color Logic ---
+        // --- STREAMING_CHUNK: Real-time UI updates for Detailed Dashboard... ---
         
-        let trend = 1; // Used to simulate a rising/falling plume
-
-        function simulateRealTimeData() {
-            // Create a fake time label
-            const now = new Date();
-            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            
-            // Randomly flip trend
-            if (Math.random() > 0.8) trend *= -1;
-            
-            // Generate next values based on trend and randomness
-            const lastPm10 = pm10Data[pm10Data.length - 1];
-            
-            // Force a massive spike occasionally for demo purposes
-            let spike = 0;
-            if (Math.random() > 0.95 && lastPm10 < 800) spike = 400;
-
-            let nextPm10 = Math.max(0, lastPm10 + (trend * (Math.random() * 50)) + spike);
-            let nextPm40 = nextPm10 * 0.7 + (Math.random() * 20 - 10);
-            let nextPm25 = nextPm40 * 0.4 + (Math.random() * 10 - 5);
-            let nextPm1 = nextPm25 * 0.4 + (Math.random() * 5 - 2);
-            
-            // Simulate RH (drifting between 70 and 98)
-            let lastRh = rhData[rhData.length - 1];
-            let nextRh = Math.max(60, Math.min(99, lastRh + (Math.random() * 6 - 2.5)));
-
-            // Shift arrays
-            timeLabels.shift(); timeLabels.push(timeStr);
-            pm1Data.shift(); pm1Data.push(nextPm1);
-            pm25Data.shift(); pm25Data.push(nextPm25);
-            pm40Data.shift(); pm40Data.push(nextPm40);
-            pm10Data.shift(); pm10Data.push(nextPm10);
-            rhData.shift(); rhData.push(nextRh);
-
-            // Update Charts
-            pmChartInstance.update();
-            rhChartInstance.update();
-
-            // Update DOM and Colors
-            updateDashboardUI(nextPm1, nextPm25, nextPm40, nextPm10, nextRh);
-            
-            // Simulate slight battery drain/fluctuation
-            updateBattery(3.28 - (Math.random() * 0.05));
+        function updateDashboardHeader(id) {
+            const node = nodesData[id];
+            document.getElementById('dash-node-id').textContent = node.id;
+            document.getElementById('dash-node-name').textContent = node.name;
         }
 
-        function updateBattery(voltage) {
+        function updateDashboardValues(id) {
+            if (activeNodeId !== id) return; // Guard clause
+            
+            const node = nodesData[id];
+            
+            // Temp & Battery
+            document.getElementById('dash-temp').textContent = node.temp.toFixed(1);
+            document.getElementById('dash-temp-bar').style.width = `${Math.min(100, (node.temp / 60) * 100)}%`;
+            
             const batEl = document.getElementById('dash-bat');
             const batInd = document.getElementById('bat-indicator');
             const batStat = document.getElementById('bat-status');
             
-            batEl.textContent = voltage.toFixed(2);
-            
-            if(voltage > 3.2) {
-                batEl.className = "text-3xl font-bold neon-text-green transition-colors duration-300";
-                batInd.className = "bg-[#00ff87] w-full h-full rounded-sm shadow-[0_0_8px_#00ff87] transition-colors duration-300";
-                batStat.textContent = "Healthy (LiFePO4)";
-                batStat.className = "text-xs text-[#00ff87] mt-2 font-medium transition-colors duration-300";
-            } else if (voltage >= 3.0 && voltage <= 3.2) {
-                batEl.className = "text-3xl font-bold neon-text-yellow transition-colors duration-300";
-                batInd.className = "bg-[#ffeb3b] w-3/4 h-full rounded-sm shadow-[0_0_8px_#ffeb3b] transition-colors duration-300";
-                batStat.textContent = "Low (LiFePO4)";
-                batStat.className = "text-xs text-[#ffeb3b] mt-2 font-medium transition-colors duration-300";
+            batEl.textContent = node.bat.toFixed(2);
+            if(node.bat > 3.2) {
+                batEl.className = "text-3xl font-bold text-[#00ff87]";
+                batInd.className = "bg-[#00ff87] w-full h-full rounded-sm shadow-[0_0_8px_#00ff87]";
+                batStat.textContent = "Healthy"; batStat.className = "text-xs text-[#00ff87] mt-2 font-medium";
+            } else if (node.bat >= 3.0) {
+                batEl.className = "text-3xl font-bold text-[#ffeb3b]";
+                batInd.className = "bg-[#ffeb3b] w-3/4 h-full rounded-sm shadow-[0_0_8px_#ffeb3b]";
+                batStat.textContent = "Low Voltage"; batStat.className = "text-xs text-[#ffeb3b] mt-2 font-medium";
             } else {
-                batEl.className = "text-3xl font-bold neon-text-red transition-colors duration-300";
-                batInd.className = "bg-[#ff003c] w-1/4 h-full rounded-sm shadow-[0_0_8px_#ff003c] transition-colors duration-300";
-                batStat.textContent = "CRITICAL LOW_BATTERY";
-                batStat.className = "text-xs text-[#ff003c] mt-2 font-bold transition-colors duration-300";
+                batEl.className = "text-3xl font-bold text-[#ff003c]";
+                batInd.className = "bg-[#ff003c] w-1/4 h-full rounded-sm shadow-[0_0_8px_#ff003c]";
+                batStat.textContent = "CRITICAL LOW"; batStat.className = "text-xs text-[#ff003c] mt-2 font-bold";
             }
-        }
 
-        function updateDashboardUI(pm1, pm25, pm40, pm10, rh) {
-            // Helper for PM Logic: Green < 950, Yellow 950-999, Red >= 1000
-            const applyPMLogic = (val, idSuffix) => {
-                document.getElementById(`val-${idSuffix}`).textContent = val.toFixed(1);
-                const card = document.getElementById(`card-${idSuffix}`);
-                const tag = document.getElementById(`tag-${idSuffix}`);
-                const valEl = document.getElementById(`val-${idSuffix}`);
-
-                if (val < 950) {
-                    card.style.borderLeftColor = '#00ff87';
-                    valEl.className = "text-3xl font-bold text-white transition-colors duration-300";
-                    tag.textContent = "NORMAL";
-                    tag.className = "text-xs text-[#00ff87] mt-2 bg-green-500/10 inline-block px-2 py-1 rounded transition-colors duration-300 border border-green-500/20";
-                } else if (val >= 950 && val < 1000) {
-                    card.style.borderLeftColor = '#ffeb3b';
-                    valEl.className = "text-3xl font-bold neon-text-yellow transition-colors duration-300";
-                    tag.textContent = "NEAR_LIMIT";
-                    tag.className = "text-xs text-[#ffeb3b] mt-2 bg-yellow-500/10 inline-block px-2 py-1 rounded transition-colors duration-300 border border-yellow-500/20";
-                } else {
-                    card.style.borderLeftColor = '#ff003c';
-                    valEl.className = "text-3xl font-bold neon-text-red transition-colors duration-300";
-                    tag.textContent = "OVER_RANGE";
-                    tag.className = "text-xs text-[#ff003c] mt-2 bg-red-500/10 inline-block px-2 py-1 rounded transition-colors duration-300 border border-red-500/20";
-                }
+            // PM Gauges Color Logic (Normal < 950, Warning >= 950, Critical >= 1000)
+            const stylePMCard = (val, suffix) => {
+                document.getElementById(`val-${suffix}`).textContent = val.toFixed(1);
+                const card = document.getElementById(`card-${suffix}`);
+                if (val < 950) card.style.borderLeftColor = '#00ff87';
+                else if (val >= 950 && val < 1000) card.style.borderLeftColor = '#ffeb3b';
+                else card.style.borderLeftColor = '#ff003c';
             };
 
-            applyPMLogic(pm1, 'pm1');
-            applyPMLogic(pm25, 'pm25');
-            applyPMLogic(pm40, 'pm40');
-            applyPMLogic(pm10, 'pm10');
+            const latestPm1 = node.history.pm1[node.history.pm1.length-1];
+            const latestPm25 = node.history.pm25[node.history.pm25.length-1];
+            const latestPm40 = node.history.pm40[node.history.pm40.length-1];
+            
+            stylePMCard(latestPm1, 'pm1');
+            stylePMCard(latestPm25, 'pm25');
+            stylePMCard(latestPm40, 'pm40');
+            stylePMCard(node.pm10, 'pm10'); // Main metric
 
-            // Apply RH Logic: NORMAL < 80, RH_SUSPECT 80-94.9, INVALID_MIST >= 95
-            document.getElementById('dash-rh').textContent = rh.toFixed(1);
-            document.getElementById('rh-bar').style.width = `${rh}%`;
+            const tag10 = document.getElementById('tag-pm10');
+            if (node.pm10 < 950) {
+                tag10.textContent = "NORMAL"; tag10.className = "text-[10px] uppercase font-bold mt-2 bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded";
+                document.getElementById('val-pm10').className = "text-3xl font-bold text-white";
+            } else if (node.pm10 >= 950 && node.pm10 < 1000) {
+                tag10.textContent = "NEAR_LIMIT"; tag10.className = "text-[10px] uppercase font-bold mt-2 bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded";
+                document.getElementById('val-pm10').className = "text-3xl font-bold neon-text-yellow";
+            } else {
+                tag10.textContent = "OVER_RANGE"; tag10.className = "text-[10px] uppercase font-bold mt-2 bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded";
+                document.getElementById('val-pm10').className = "text-3xl font-bold neon-text-red";
+            }
+
+            // Quick Status Top Card Based on Logic
+            const systemStatus = evaluateNodeStatus(node.pm10, node.rh);
+            const quickIcon = document.getElementById('dash-quick-icon');
+            const quickText = document.getElementById('dash-quick-text');
+            
+            if (systemStatus.type === 'red') {
+                quickIcon.className = "w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2 text-[#ff003c]";
+                quickIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                quickText.className = "text-lg font-bold neon-text-red tracking-wide uppercase";
+                quickText.textContent = "DUST ALERT";
+            } else if (systemStatus.type === 'orange') {
+                quickIcon.className = "w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center mb-2 text-[#ff9800]";
+                quickIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
+                quickText.className = "text-lg font-bold neon-text-orange tracking-wide uppercase";
+                quickText.textContent = "MIST INTERFERENCE";
+            } else {
+                quickIcon.className = "w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-2 text-[#00ff87]";
+                quickIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                quickText.className = "text-lg font-bold neon-text-green tracking-wide uppercase";
+                quickText.textContent = "SYSTEM OK";
+            }
+
+            // Bottom RH Section Logic (NORMAL < 80%, RH_SUSPECT 80-94%, INVALID_MIST >= 95%)
+            document.getElementById('dash-rh').textContent = node.rh.toFixed(1);
+            document.getElementById('rh-bar').style.width = `${node.rh}%`;
 
             const rhCard = document.getElementById('rh-flag-card');
             const rhBadge = document.getElementById('rh-flag-badge');
             const rhText = document.getElementById('rh-flag-text');
             const rhDesc = document.getElementById('rh-flag-desc');
 
-            if (rh < 80) {
-                rhCard.className = "dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center col-span-1 border-green-500/30 bg-green-900/10 transition-colors duration-300";
-                rhBadge.className = "px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 transition-colors duration-300";
-                rhText.className = "text-xl font-bold neon-text-green tracking-widest transition-colors duration-300";
-                rhText.textContent = "NORMAL";
-                rhDesc.className = "text-xs text-green-500/70 mt-3 max-w-[200px] transition-colors duration-300";
-                rhDesc.textContent = "RH < 80%. Environment stable, proxy data valid.";
-            } else if (rh >= 80 && rh < 95) {
-                rhCard.className = "dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center col-span-1 border-yellow-500/30 bg-yellow-900/10 transition-colors duration-300";
-                rhBadge.className = "px-4 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/50 transition-colors duration-300";
-                rhText.className = "text-xl font-bold neon-text-yellow tracking-widest transition-colors duration-300";
-                rhText.textContent = "RH_SUSPECT";
-                rhDesc.className = "text-xs text-yellow-500/70 mt-3 max-w-[200px] transition-colors duration-300";
-                rhDesc.textContent = "80% ≤ RH < 95%. Hygroscopic growth inflating readings.";
+            if (node.rh < 80) {
+                rhCard.className = "dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center col-span-1 border-green-500/30 bg-green-900/10";
+                rhBadge.className = "px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50";
+                rhText.className = "text-xl font-bold neon-text-green tracking-widest"; rhText.textContent = "NORMAL";
+                rhDesc.className = "text-xs text-green-400 mt-3 max-w-[200px]"; rhDesc.textContent = "RH < 80%. Environment stable.";
+            } else if (node.rh >= 80 && node.rh < 95) {
+                rhCard.className = "dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center col-span-1 border-yellow-500/30 bg-yellow-900/10";
+                rhBadge.className = "px-4 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/50";
+                rhText.className = "text-xl font-bold neon-text-yellow tracking-widest"; rhText.textContent = "RH_SUSPECT";
+                rhDesc.className = "text-xs text-yellow-400 mt-3 max-w-[200px]"; rhDesc.textContent = "80% ≤ RH < 95%. Hygroscopic growth inflating readings.";
             } else {
-                rhCard.className = "dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center col-span-1 border-red-500/30 bg-red-900/10 transition-colors duration-300";
-                rhBadge.className = "px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 transition-colors duration-300";
-                rhText.className = "text-xl font-bold neon-text-red tracking-widest transition-colors duration-300";
-                rhText.textContent = "INVALID_MIST";
-                rhDesc.className = "text-xs text-red-500/70 mt-3 max-w-[200px] transition-colors duration-300";
-                rhDesc.textContent = "RH ≥ 95%. Condensation detected. Data invalid.";
+                rhCard.className = "dashboard-card rounded-xl p-5 flex flex-col items-center justify-center text-center col-span-1 border-red-500/30 bg-red-900/10";
+                rhBadge.className = "px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50";
+                rhText.className = "text-xl font-bold neon-text-red tracking-widest"; rhText.textContent = "INVALID_MIST";
+                rhDesc.className = "text-xs text-red-400 mt-3 max-w-[200px]"; rhDesc.textContent = "RH ≥ 95%. Condensation detected. Data invalid.";
             }
         }
+
+        // --- STREAMING_CHUNK: Real-time Data Simulation Loop... ---
+        
+        setInterval(() => {
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+            nodeIds.forEach(id => {
+                let node = nodesData[id];
+                
+                // Add minor random fluctuations to keep values mostly stable but "live"
+                let pmDrift = (Math.random() * 10 - 5);
+                
+                // Keep the RED and ORANGE nodes in their respective states for demo purposes
+                if (id === 'NODE_RJ_01') { 
+                    node.pm10 = Math.max(960, Math.min(1150, node.pm10 + pmDrift));
+                    node.rh = Math.max(30, Math.min(79, node.rh + (Math.random() * 2 - 1)));
+                } else if (id === 'NODE_RJ_02') {
+                    node.pm10 = Math.max(960, Math.min(1100, node.pm10 + pmDrift));
+                    node.rh = Math.max(81, Math.min(99, node.rh + (Math.random() * 2 - 1)));
+                } else {
+                    node.pm10 = Math.max(10, Math.min(940, node.pm10 + pmDrift));
+                    node.rh = Math.max(40, Math.min(99, node.rh + (Math.random() * 4 - 2)));
+                }
+
+                // Calculate smaller PMs
+                let p40 = node.pm10 * 0.7 + (Math.random() * 5);
+                let p25 = p40 * 0.4 + (Math.random() * 2);
+                let p1 = p25 * 0.4 + (Math.random());
+
+                // Update Temp & Battery slowly
+                node.temp = Math.max(20, Math.min(50, node.temp + (Math.random() * 0.4 - 0.2)));
+                node.bat = Math.max(2.8, Math.min(3.4, node.bat + (Math.random() * 0.02 - 0.01)));
+
+                // Push to history array
+                node.history.labels.push(timeStr);
+                node.history.pm10.push(node.pm10);
+                node.history.pm40.push(p40);
+                node.history.pm25.push(p25);
+                node.history.pm1.push(p1);
+                node.history.rh.push(node.rh);
+
+                // Keep history length fixed
+                if (node.history.labels.length > MAX_HISTORY) {
+                    node.history.labels.shift();
+                    node.history.pm10.shift();
+                    node.history.pm40.shift();
+                    node.history.pm25.shift();
+                    node.history.pm1.shift();
+                    node.history.rh.shift();
+                }
+            });
+
+            // Update UI based on active screen
+            if (activeNodeId) {
+                // Update Detailed Dashboard Charts
+                pmChartInst.update();
+                rhChartInst.update();
+                // Update Dashboard Values
+                updateDashboardValues(activeNodeId);
+            } else {
+                // Update Table Data
+                renderTable();
+            }
+        }, 2000); // 2 Second update interval
+
+        // Initial Render
+        renderTable();
+
     </script>
 </body>
 </html>
